@@ -19,7 +19,7 @@ interface FetchOptions<TBody> extends Omit<RequestInit, 'body'> {
   body?: TBody;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+const API_BASE = process.env.NEXT_PUBLIC_APP_URL ?? '';
 
 export async function apiFetch<TResponse, TBody = unknown>(
   path: string,

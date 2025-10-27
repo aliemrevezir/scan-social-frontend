@@ -98,7 +98,17 @@ export interface BrandStatus {
 }
 
 // ---------- Endpoints ----------
-const base = "/brands";
+const base = "/api/v1/brands";
+
+export interface BrandStatusCheckResponse {
+  has_brand: boolean;
+  is_onboarded: boolean;
+}
+
+export interface BrandPreferencesResponse {
+  campaign_preferences: CampaignPreferences | null;
+  brand_voice: BrandVoice | null;
+}
 
 export async function listBrands(): Promise<Brand[]> {
   return apiFetch<Brand[]>(`${base}/`, { method: "GET" });
@@ -123,6 +133,16 @@ export async function deleteBrand(brandId: UUID): Promise<void> {
 // Profile
 export async function upsertBrandProfile(brandId: UUID, payload: BrandProfile): Promise<BrandProfile> {
   return apiFetch<BrandProfile>(`${base}/${brandId}/profile`, { method: "PUT", body: payload });
+}
+
+// Check brand and onboarding status
+export async function checkBrandStatus(): Promise<BrandStatusCheckResponse> {
+  return apiFetch<BrandStatusCheckResponse>(`${base}/check-status`, { method: "GET" });
+}
+
+// Get brand preferences (campaign_preferences + brand_voice)
+export async function getBrandPreferences(brandId: UUID): Promise<BrandPreferencesResponse> {
+  return apiFetch<BrandPreferencesResponse>(`${base}/${brandId}/preferences`, { method: "GET" });
 }
 
 // Social handles

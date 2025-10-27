@@ -26,6 +26,7 @@ import {
   commitPastCampaign,
   submitBrand,
   getBrandStatus,
+  checkBrandStatus,
   isBrandOnboarded,
 } from "./onboarding";
 
@@ -33,6 +34,7 @@ export const rqKeys = {
   brands: () => ["brands"] as const,
   brand: (id?: UUID | null) => ["brands", id ?? "unknown"] as const,
   brandStatus: (id?: UUID | null) => ["brands", id ?? "unknown", "status"] as const,
+  brandCheckStatus: () => ["brands", "check-status"] as const,
 };
 
 // Queries
@@ -165,17 +167,22 @@ interface ShouldShowModalOptions {
 export function useShouldShowOnboardingModal(brandId?: UUID | null, options?: ShouldShowModalOptions) {
   const includeWhenNoBrand = options?.includeWhenNoBrand ?? false;
   const enabled = options?.enabled ?? true;
-  const refetchInterval = options?.refetchInterval ?? 4000;
 
-  const statusQuery = useBrandStatus(brandId, Boolean(brandId) && enabled, refetchInterval);
+  // Use check-status endpoint to get overall onboarding status for all brands
+  const statusQuery = useQuery({
+    queryKey: rqKeys.brandCheckStatus(),
+    queryFn: checkBrandStatus,
+    enabled: enabled,
+    refetchInterval: options?.refetchInterval ?? 4000,
+  });
 
-  const showForMissingBrand = includeWhenNoBrand && enabled && !brandId;
+  const showForMissingBrand = includeWhenNoBrand && enabled && !statusQuery.data?.has_brand;
   const showForExistingBrand =
-    Boolean(brandId) &&
     enabled &&
     !statusQuery.isLoading &&
     !statusQuery.isFetching &&
-    !isBrandOnboarded(statusQuery.data ?? null);
+    statusQuery.data?.has_brand &&
+    !statusQuery.data?.is_onboarded;
 
   return {
     showModal: showForMissingBrand || showForExistingBrand,

@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
 
 import { Button } from '@/components/atoms/Button';
 import type { BrandStatus } from '@/lib/api/onboarding';
@@ -33,16 +34,22 @@ interface OnboardingStatusModalProps {
   open: boolean;
   status?: BrandStatus | null;
   onContinue: () => void;
-  onDismiss?: () => void;
+  onClose?: () => void;
 }
 
 export function OnboardingStatusModal({
   open,
   status,
   onContinue,
-  onDismiss,
+  onClose,
 }: OnboardingStatusModalProps) {
   const copy = statusCopy[status?.state ?? 'idle'];
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen && onClose) {
+      onClose();
+    }
+  };
 
   const listItems = useMemo(() => {
     if (!status?.jobs?.length) return null;
@@ -55,14 +62,27 @@ export function OnboardingStatusModal({
   }, [status?.jobs]);
 
   return (
-    <Dialog.Root open={open}>
+    <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-[color:var(--color-overlay,rgba(15,23,42,0.45))]" />
+        <Dialog.Overlay 
+          className="fixed inset-0 z-40 bg-[color:var(--color-overlay,rgba(15,23,42,0.45))]" 
+          onClick={() => onClose?.()}
+        />
         <Dialog.Content
           className="fixed inset-0 z-50 flex items-center justify-center px-4 py-10"
           aria-describedby={undefined}
+          onEscapeKeyDown={() => onClose?.()}
         >
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-[0_35px_60px_-15px_rgba(15,23,42,0.35)] sm:p-8">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-[0_35px_60px_-15px_rgba(15,23,42,0.35)] sm:p-8">
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
+                aria-label="Close dialog"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </Dialog.Close>
             <div className="space-y-2 text-center">
               <Dialog.Title className="text-2xl font-semibold text-[color:var(--color-text-strong)]">
                 {copy.title}
@@ -77,17 +97,6 @@ export function OnboardingStatusModal({
             ) : null}
 
             <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-end">
-              {onDismiss ? (
-                <Button
-                  variant="ghost"
-                  className="sm:flex-1"
-                  onClick={() => {
-                    onDismiss();
-                  }}
-                >
-                  Maybe later
-                </Button>
-              ) : null}
               <Button
                 className="sm:flex-1"
                 onClick={() => {

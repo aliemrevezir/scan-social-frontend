@@ -25,17 +25,21 @@ export function OnboardingGate() {
 
   const status = statusQuery.data;
   const alreadyComplete = status ? isBrandOnboarded(status) : false;
-  const open = showModal && !alreadyComplete;
+  const shouldShowModal = showModal && !alreadyComplete;
 
-  if (!open) {
+  if (!shouldShowModal) {
     return null;
   }
 
   return (
     <OnboardingStatusModal
-      open
+      open={shouldShowModal}
       status={status}
       onContinue={() => router.push('/onboarding')}
+      onClose={() => {
+        // Modal closed by user - but don't show again until page refresh
+        // Backend determines if onboarding is truly complete
+      }}
     />
   );
 }
