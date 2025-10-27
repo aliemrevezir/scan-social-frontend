@@ -92,7 +92,7 @@ export interface BrandStatus {
 }
 
 // ---------- Endpoints ----------
-const base = "/api/v1/brands";
+const base = "/brands";
 
 export async function listBrands(): Promise<Brand[]> {
   return apiFetch<Brand[]>(`${base}/`, { method: "GET" });

@@ -4,10 +4,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Body + hero background to blue gradient */
 body {
   margin: 0;
   font-family: var(--font-display);
-  background-color: var(--color-bg);
+  background: linear-gradient(180deg, var(--gradient-hero-from), var(--gradient-hero-via), var(--gradient-hero-to));
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -40,10 +41,16 @@ img {
   padding-block: 3.5rem;
 }
 
+/* Muted section tint (was greenish) -> subtle blue */
 .section-muted {
-  background: linear-gradient(180deg, rgba(20, 121, 81, 0.04) 0%, rgba(20, 121, 81, 0.08) 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-primary) 6%, #ffffff) 0%,
+    color-mix(in srgb, var(--color-primary) 10%, #ffffff) 100%
+  );
 }
 
+/* Dark section background */
 .section-dark {
   background: var(--color-dark);
   color: #f8fafc;

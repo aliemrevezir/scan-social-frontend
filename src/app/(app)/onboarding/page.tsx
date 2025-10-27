@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { useForm } from 'react-hook-form';
@@ -8,12 +8,14 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { Lightbulb, Zap } from 'lucide-react';
 
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
 import { FormField } from '@/components/ui/FormField';
 import { Checkbox } from '@/components/atoms/Checkbox';
 import { useBrands, useBrandStatus } from '@/lib/api/onboarding.hooks';
+import { useOnboardingStorage } from '@/hooks/useOnboardingStorage';
 import {
   createBrand,
   updateBrand,
@@ -100,9 +102,11 @@ const optionButtonClass =
 export default function OnboardingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const storage = useOnboardingStorage();
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [brandId, setBrandId] = useState<string | null>(null);
   const [brandSnapshot, setBrandSnapshot] = useState<Brand | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const { data: brandList, isLoading: brandsLoading } = useBrands(true);
   const existingBrand = brandList?.[0];
@@ -134,20 +138,57 @@ export default function OnboardingPage() {
     },
   });
 
+  // Watch form changes for auto-save
+  const brandFormValues = brandForm.watch();
+  const preferencesFormValues = preferencesForm.watch();
+  const hydrationRef = useRef(false);
+
+  // Load onboarding data from localStorage on mount (only once)
   useEffect(() => {
-    if (!existingBrand) return;
-    setBrandId(existingBrand.id);
-    setBrandSnapshot(existingBrand);
-    brandForm.reset({
-      name: existingBrand.name ?? '',
-      website: existingBrand.website ?? '',
-      industry: '',
-      company_size: '',
-      geography: '',
-      target_audience: '',
-      brand_description: '',
-    });
-  }, [existingBrand, brandForm]);
+    if (hydrationRef.current) return; // Prevent duplicate hydration
+    hydrationRef.current = true;
+
+    const storedData = storage.loadFromStorage();
+    if (storedData.brandDetails) {
+      brandForm.reset(storedData.brandDetails as BrandDetailsFormValues);
+    }
+    if (storedData.preferences) {
+      preferencesForm.reset(storedData.preferences as any);
+    }
+    if (storedData.brandId) {
+      setBrandId(storedData.brandId);
+    }
+    setActiveStepIndex(storedData.currentStep || 0);
+    setIsHydrated(true);
+  }, []); // Empty dependency array - run only once on mount
+
+  // Auto-save brand form changes to localStorage
+  useEffect(() => {
+    if (isHydrated && hydrationRef.current) {
+      storage.saveBrandDetails(brandFormValues);
+    }
+  }, [brandFormValues, isHydrated]); // Remove storage from dependencies
+
+  // Auto-save preferences form changes to localStorage
+  useEffect(() => {
+    if (isHydrated && hydrationRef.current) {
+      storage.savePreferences(preferencesFormValues);
+    }
+  }, [preferencesFormValues, isHydrated]); // Remove storage from dependencies
+
+  // Auto-save current step to localStorage
+  useEffect(() => {
+    if (isHydrated && hydrationRef.current) {
+      storage.saveCurrentStep(activeStepIndex);
+    }
+  }, [activeStepIndex, isHydrated]); // Remove storage from dependencies
+
+  // Auto-save brand ID when it changes
+  useEffect(() => {
+    if (brandId && hydrationRef.current) {
+      storage.saveBrandId(brandId);
+    }
+  }, [brandId]); // Remove storage from dependencies
 
   const statusEnabled = useMemo(
     () => Boolean(brandId) && steps[activeStepIndex].key === 'summary',
@@ -170,6 +211,9 @@ export default function OnboardingPage() {
   const goBack = () => goToStep(activeStepIndex - 1);
 
   const handleCreateOrUpdateBrand = async (values: BrandDetailsFormValues) => {
+    // Save to localStorage
+    storage.saveBrandDetails(values);
+
     const payload = {
       name: values.name.trim(),
       website: values.website?.trim() ?? null,
@@ -216,6 +260,9 @@ export default function OnboardingPage() {
   };
 
   const handleSavePreferences = async (values: PreferencesFormValues) => {
+    // Save to localStorage
+    storage.savePreferences(values);
+
     if (!brandId) {
       toast.error('Create your brand first.');
       return;
@@ -246,9 +293,17 @@ export default function OnboardingPage() {
       toast.error('Create your brand before submitting onboarding.');
       return;
     }
+
+    // Prepare complete payload from localStorage data
+    const storedData = storage.loadFromStorage();
+    const payload = storage.prepareSubmissionPayload(storedData);
+    console.log('Submission payload prepared:', payload);
+
     try {
       await submitBrand(brandId);
       toast.success('Brand submitted. We will start processing shortly.');
+      // Clear storage after successful submission
+      storage.clearStorage();
       queryClient.invalidateQueries({ queryKey: rqKeys.brandStatus(brandId) });
     } catch (error) {
       console.error(error);
@@ -267,24 +322,32 @@ export default function OnboardingPage() {
           const isCompleted = index < activeStepIndex;
           return (
             <li key={step.key} className="flex items-center gap-3 text-sm">
-              <span
+              <button
+                type="button"
+                onClick={() => goToStep(index)}
                 className={clsx(
-                  'inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
-                  isActive && 'border-primary bg-primary text-white shadow-soft',
-                  isCompleted && !isActive && 'border-primary/40 bg-primary/10 text-primary',
-                  !isActive && !isCompleted && 'border-border-light bg-white text-text-muted',
+                  'inline-flex h-9 w-9 items-center justify-center rounded-full border text-sm font-bold transition-colors cursor-pointer',
+                  isActive && 'border-[#1e40af] bg-[#1e40af] text-white shadow-soft',
+                  isCompleted && !isActive && 'border-primary/40 bg-primary/10 text-primary hover:border-primary/60',
+                  !isActive && !isCompleted && 'border-border-light bg-white text-text-muted hover:border-border-light/60',
                 )}
+                aria-label={`Go to ${step.title}`}
               >
                 {index + 1}
-              </span>
-              <div className="hidden flex-col sm:flex">
+              </button>
+              <button
+                type="button"
+                onClick={() => goToStep(index)}
+                className="hidden flex-col sm:flex gap-0 text-left cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label={`Go to ${step.title}`}
+              >
                 <span className={clsx('text-xs font-semibold uppercase tracking-[0.18em]', isActive ? 'text-primary' : 'text-text-muted')}>
                   Step {index + 1}
                 </span>
                 <span className={clsx('text-sm font-medium', isActive ? 'text-text' : 'text-text-secondary')}>
                   {step.title}
                 </span>
-              </div>
+              </button>
             </li>
           );
         })}
@@ -303,13 +366,19 @@ export default function OnboardingPage() {
       </p>
       <ul className="grid gap-3 text-sm text-text-secondary sm:grid-cols-2">
         <li className="rounded-2xl border border-border-light bg-primary/5 px-4 py-3">
-          <span className="font-semibold text-primary">🧠 Smart suggestions</span>
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="font-semibold text-primary">Smart suggestions</span>
+          </div>
           <p className="mt-2 leading-relaxed text-text-secondary">
             Match with creators that fit your goals, tone, and target audience.
           </p>
         </li>
         <li className="rounded-2xl border border-border-light bg-primary/5 px-4 py-3">
-          <span className="font-semibold text-primary">🚀 Faster approvals</span>
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary flex-shrink-0" />
+            <span className="font-semibold text-primary">Faster approvals</span>
+          </div>
           <p className="mt-2 leading-relaxed text-text-secondary">
             Use AI-enriched briefs and status tracking to keep every campaign on schedule.
           </p>
@@ -383,7 +452,7 @@ export default function OnboardingPage() {
               infoText="Use the full URL, including https://"
               error={errors.website?.message}
             >
-              <Input id="brand-website" placeholder="https://example.com" {...register('website')} />
+              <Input id="brand-website" placeholder="https://scansocial.site" {...register('website')} />
             </FormField>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -403,7 +472,7 @@ export default function OnboardingPage() {
               infoText="Approximate team size (e.g., 11–50)"
               error={errors.company_size?.message}
             >
-              <Input id="brand-company" placeholder="11–50" size="compact" {...register('company_size')} />
+              <Input id="brand-company" placeholder="11–50" {...register('company_size')} />
             </FormField>
           </div>
         </section>
@@ -517,8 +586,8 @@ export default function OnboardingPage() {
                       className={clsx(
                         optionButtonClass,
                         isSelected
-                          ? 'border-primary bg-primary/10 text-primary shadow-soft'
-                          : 'border-border-light bg-white text-text-secondary hover:border-primary/40',
+                          ? 'border-[#1e40af] bg-[#1e40af] text-white shadow-soft font-medium'
+                          : 'border-border-light bg-white text-text-secondary hover:border-[#1e40af]/40',
                       )}
                       onClick={() => setValue('budget_range', option, { shouldValidate: true })}
                     >
@@ -543,8 +612,8 @@ export default function OnboardingPage() {
                         optionButtonClass,
                         'capitalize',
                         isSelected
-                          ? 'border-primary bg-primary/10 text-primary shadow-soft'
-                          : 'border-border-light bg-white text-text-secondary hover:border-primary/40',
+                          ? 'border-[#1e40af] bg-[#1e40af] text-white shadow-soft font-medium'
+                          : 'border-border-light bg-white text-text-secondary hover:border-[#1e40af]/40',
                       )}
                       onClick={() => setValue('campaign_frequency', option, { shouldValidate: true })}
                     >
@@ -577,7 +646,7 @@ export default function OnboardingPage() {
                       type="button"
                       className={clsx(
                         chipButtonClass,
-                        selected ? 'border-primary bg-primary text-white shadow-soft' : 'border-border-light bg-white text-text-secondary',
+                        selected ? 'border-[#1e40af] bg-[#1e40af] text-white shadow-soft font-medium' : 'border-border-light bg-white text-text-secondary hover:border-[#1e40af]/40',
                       )}
                       onClick={() => toggleSelection('content_types', option)}
                     >
@@ -600,7 +669,7 @@ export default function OnboardingPage() {
                       type="button"
                       className={clsx(
                         chipButtonClass,
-                        selected ? 'border-primary bg-primary text-white shadow-soft' : 'border-border-light bg-white text-text-secondary',
+                        selected ? 'border-[#1e40af] bg-[#1e40af] text-white shadow-soft font-medium' : 'border-border-light bg-white text-text-secondary hover:border-[#1e40af]/40',
                       )}
                       onClick={() => toggleSelection('campaign_goals', option)}
                     >
@@ -720,7 +789,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const ready = !brandsLoading;
+  const ready = !brandsLoading && isHydrated;
 
   return (
     <main className="relative min-h-screen bg-transparent px-4 pb-20 pt-24 sm:px-6 lg:px-0">
