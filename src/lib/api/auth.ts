@@ -48,6 +48,22 @@ const userTypeMap: Record<string, UserType> = {
   CREATOR: 'INFLUENCER',
 };
 
+interface JwtUserPayload {
+  sub?: string;
+  user_id?: string;
+  uuid?: string;
+  id?: string;
+  email?: string;
+  username?: string;
+  display_name?: string;
+  displayName?: string;
+  name?: string;
+  type?: string;
+  role?: string;
+  user_type?: string;
+  account_type?: string;
+}
+
 const getValueAtPath = (source: Record<string, unknown>, path: string): unknown => {
   return path.split('.').reduce<unknown>((acc, key) => {
     if (acc && typeof acc === 'object' && acc !== null) {
@@ -106,6 +122,24 @@ const normalizeUser = (raw: Record<string, unknown> | undefined): User => {
     type,
     displayName,
   };
+};
+
+const normalizeUserFromToken = (accessToken: string): User => {
+  const decoded = jwtDecode<JwtUserPayload>(accessToken);
+  const raw: Record<string, unknown> = {
+    id:
+      decoded.user_id ??
+      decoded.uuid ??
+      decoded.sub ??
+      decoded.id ??
+      decoded.username ??
+      null,
+    email: decoded.email ?? decoded.username ?? null,
+    display_name: decoded.display_name ?? decoded.displayName ?? decoded.name ?? null,
+    type: decoded.type ?? decoded.role ?? decoded.user_type ?? decoded.account_type ?? null,
+  };
+
+  return normalizeUser(raw);
 };
 
 const normalizeAuthPayload = (payload: unknown): AuthResponse => {
@@ -173,8 +207,7 @@ const normalizeAuthPayload = (payload: unknown): AuthResponse => {
     pickObject(source, ['user', 'account', 'profile']) ??
     pickObject(source, ['data.user', 'data.account', 'data.profile']) ??
     pickObject(source, ['data.data.user']);
-
-  const user = normalizeUser(userSource);
+  const user = userSource ? normalizeUser(userSource) : normalizeUserFromToken(accessToken);
 
   return {
     accessToken,
