@@ -89,10 +89,8 @@ const goalOptions = ['brand_awareness', 'lead_generation', 'sales', 'engagement'
 const budgetOptions = ['<10000', '10000-50000', '50000-150000', '150000+'] as const;
 const frequencyOptions = ['one-off', 'monthly', 'quarterly', 'always-on'] as const;
 
-const inputClass =
-  'h-12 rounded-2xl border border-border-light bg-white px-4 text-sm text-text placeholder:text-text-muted shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none';
-const textareaClass =
-  'min-h-[160px] rounded-3xl border border-border-light bg-white px-4 py-3 text-sm text-text placeholder:text-text-muted shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none';
+const textareaBase =
+  'w-full min-h-[160px] rounded-3xl border border-border-light bg-white px-4 py-3 text-sm text-text placeholder:text-text-muted shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none';
 const cardClass = 'rounded-[28px] border border-border-light bg-white/95 p-6 shadow-soft md:p-8';
 const chipButtonClass =
   'rounded-full border px-4 py-2 text-sm font-medium capitalize transition-colors';
@@ -369,24 +367,43 @@ export default function OnboardingPage() {
             <p className="text-sm text-text-secondary">Help us understand the essentials so recommendations reflect your brand.</p>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <FormField label="Brand name" htmlFor="brand-name" error={errors.name?.message}>
-              <Input id="brand-name" placeholder="Scan Social" className={inputClass} {...register('name')} />
+            <FormField
+              variant="inside"
+              label="Brand name"
+              htmlFor="brand-name"
+              infoText="Your public brand name as it appears on social and your website."
+              error={errors.name?.message}
+            >
+              <Input id="brand-name" placeholder="Scan Social" {...register('name')} />
             </FormField>
-            <FormField label="Website" htmlFor="brand-website" helperText="Include https://" error={errors.website?.message}>
-              <Input id="brand-website" placeholder="https://example.com" className={inputClass} {...register('website')} />
+            <FormField
+              variant="inside"
+              label="Website"
+              htmlFor="brand-website"
+              infoText="Use the full URL, including https://"
+              error={errors.website?.message}
+            >
+              <Input id="brand-website" placeholder="https://example.com" {...register('website')} />
             </FormField>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <FormField
+              variant="inside"
               label="Industry"
               htmlFor="brand-industry"
-              helperText="e.g. Beauty, Fintech, Consumer Electronics"
+              infoText="E.g., Beauty, Fintech, Consumer Electronics"
               error={errors.industry?.message}
             >
-              <Input id="brand-industry" placeholder="Industry" className={inputClass} {...register('industry')} />
+              <Input id="brand-industry" placeholder="Industry" {...register('industry')} />
             </FormField>
-            <FormField label="Company size" htmlFor="brand-company" helperText="Approximate team size" error={errors.company_size?.message}>
-              <Input id="brand-company" placeholder="11-50" className={inputClass} {...register('company_size')} />
+            <FormField
+              variant="inside"
+              label="Company size"
+              htmlFor="brand-company"
+              infoText="Approximate team size (e.g., 11–50)"
+              error={errors.company_size?.message}
+            >
+              <Input id="brand-company" placeholder="11–50" size="compact" {...register('company_size')} />
             </FormField>
           </div>
         </section>
@@ -398,20 +415,22 @@ export default function OnboardingPage() {
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <FormField
+              variant="inside"
               label="Primary geography"
               htmlFor="brand-geography"
-              helperText="Comma separated list (e.g. United States, Canada)"
+              infoText="Comma separated list (e.g., United States, Canada)"
               error={errors.geography?.message}
             >
-              <Input id="brand-geography" placeholder="United States, Canada" className={inputClass} {...register('geography')} />
+              <Input id="brand-geography" placeholder="United States, Canada" {...register('geography')} />
             </FormField>
-            <FormField label="Target audience" htmlFor="brand-audience" helperText="Who are you trying to reach?" error={errors.target_audience?.message}>
-              <Input
-                id="brand-audience"
-                placeholder="Gen Z skincare enthusiasts, 18-24"
-                className={inputClass}
-                {...register('target_audience')}
-              />
+            <FormField
+              variant="inside"
+              label="Target audience"
+              htmlFor="brand-audience"
+              infoText="Describe who you want to reach."
+              error={errors.target_audience?.message}
+            >
+              <Input id="brand-audience" placeholder="Gen Z skincare enthusiasts, 18–24" {...register('target_audience')} />
             </FormField>
           </div>
         </section>
@@ -426,7 +445,7 @@ export default function OnboardingPage() {
               id="brand-description"
               {...register('brand_description')}
               placeholder="Tell us about your brand voice, key differentiators, and brand story."
-              className={textareaClass}
+              className={textareaBase}
             />
           </FormField>
         </section>
