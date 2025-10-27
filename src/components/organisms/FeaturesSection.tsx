@@ -23,7 +23,7 @@ export function FeaturesSection({ items }: FeaturesSectionProps) {
           title="Everything you need to brief, launch, and learn from creator campaigns"
           description="From the first search query to post-campaign analytics, Scan Social gives marketing teams a single control center for working with every creator."
         />
-        <div className="mt-12 feature-grid">
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => (
             <FeatureCard key={item.title} {...item} />
           ))}

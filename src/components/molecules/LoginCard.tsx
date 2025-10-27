@@ -84,34 +84,40 @@ export function LoginCard() {
   });
 
   return (
-    <div className="card login-card space-y-8">
-      <div className="space-y-4 text-left">
-        <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--color-muted)]">
-          Sign in
-        </span>
-        <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-          Access your workspace
-        </h2>
-        <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-          Use the email linked to your Scan Social account. You can switch roles with <a href="/login?role=influencer"><code>?role=influencer</code></a> when testing.
+    <div
+      className="relative flex flex-col gap-8 rounded-3xl border border-border-light bg-white/90 p-8 shadow-soft backdrop-blur"
+      style={{
+        backgroundImage:
+          'linear-gradient(140deg, rgba(255,255,255,0.96), color-mix(in srgb, var(--color-primary) 8%, #ffffff))',
+      }}
+    >
+      <div className="space-y-3 text-left">
+        <span className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/70">Sign in</span>
+        <h2 className="text-2xl font-semibold text-text">Access your workspace</h2>
+        <p className="text-sm leading-relaxed text-text-secondary">
+          Use the email linked to your Scan Social account. Switch roles quickly with{' '}
+          <a href="/login?role=influencer" className="font-medium text-primary underline-offset-2 hover:underline">
+            ?role=influencer
+          </a>{' '}
+          when testing.
         </p>
       </div>
 
       {globalError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10">
+        <div className="rounded-xl border border-error/20 bg-error-bg px-4 py-3 text-sm text-error">
           {globalError}
         </div>
       ) : null}
 
       {redirectMessage ? (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10">
+        <div className="rounded-xl border border-info/20 bg-info-bg px-4 py-3 text-sm text-info">
           {redirectMessage}
         </div>
       ) : null}
 
-      <form onSubmit={onSubmit} className="space-y-6" noValidate>
-        <div className="space-y-3">
-          <label htmlFor="email" className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+      <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="text-sm font-semibold text-text">
             Email address
           </label>
           <Input
@@ -121,11 +127,11 @@ export function LoginCard() {
             placeholder="you@brand.com"
             {...register('email')}
           />
-          {errors.email ? <p className="error">{errors.email.message}</p> : null}
+          {errors.email ? <p className="text-sm text-error">{errors.email.message}</p> : null}
         </div>
 
-        <div className="space-y-3">
-          <label htmlFor="password" className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="text-sm font-semibold text-text">
             Password
           </label>
           <Input
@@ -135,14 +141,14 @@ export function LoginCard() {
             placeholder="••••••••"
             {...register('password')}
           />
-          {errors.password ? <p className="error">{errors.password.message}</p> : null}
+          {errors.password ? <p className="text-sm text-error">{errors.password.message}</p> : null}
         </div>
 
-        <div className="flex items-center justify-between text-sm pt-2">
-          <a className="font-medium text-[color:var(--color-primary)] hover:opacity-80" href="/forgot-password">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-primary">
+          <a className="font-medium transition-opacity hover:opacity-80" href="/forgot-password">
             Forgot password?
           </a>
-          <a className="font-medium text-[color:var(--color-primary)] hover:opacity-80" href="/signup">
+          <a className="font-medium transition-opacity hover:opacity-80" href="/signup">
             Create an account
           </a>
         </div>
@@ -152,14 +158,13 @@ export function LoginCard() {
         </Button>
       </form>
 
-      <div className="relative pt-2">
-        <div className="login-divider" />
-        <div className="relative -mt-3 mb-4 flex justify-center">
-          <span className="login-subtle bg-[color:var(--color-surface)] px-4 py-1 text-sm">Or continue with</span>
-        </div>
+      <div className="flex items-center gap-4 text-sm text-text-muted">
+        <span className="h-px flex-1 bg-border-light" />
+        <span>Or continue with</span>
+        <span className="h-px flex-1 bg-border-light" />
       </div>
 
-      <Button type="button" variant="ghost" fullWidth disabled className="mb-2">
+      <Button type="button" variant="ghost" fullWidth disabled className="border-dashed text-text-muted">
         Continue with TikTok
       </Button>
     </div>

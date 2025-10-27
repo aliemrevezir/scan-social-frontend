@@ -21,7 +21,7 @@ export function TrustedBySection({ logos }: TrustedBySectionProps) {
           description="Scan Social powers modern social squads — from lean startups testing TikTok awareness to global brands scaling community-driven programs across every network."
           alignment="center"
         />
-        <div className="logo-grid mt-12">
+        <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {logos.map((logo) => (
             <BrandTile key={logo.name} {...logo} />
           ))}

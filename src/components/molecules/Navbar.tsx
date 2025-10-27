@@ -37,11 +37,17 @@ export function Navbar({ links, ctaPrimary, ctaSecondary }: NavbarProps) {
 
   return (
     <header className="header">
-      <Container className="navbar">
-        <Logo />
-        <nav className="nav-links text-sm">
+      <Container className="flex items-center gap-6 py-4">
+        <div className="flex items-center gap-3">
+          <Logo />
+        </div>
+        <nav className="hidden items-center gap-6 text-sm font-medium text-text-secondary md:flex">
           {links.map((link) => (
-            <a key={`${link.href}-${link.label}`} href={link.href} className="transition-colors hover:text-primary">
+            <a
+              key={`${link.href}-${link.label}`}
+              href={link.href}
+              className="transition-colors hover:text-primary"
+            >
               {link.label}
             </a>
           ))}
