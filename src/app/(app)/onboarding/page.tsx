@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { Lightbulb, Zap } from 'lucide-react';
+import { Lightbulb, Zap, Info } from 'lucide-react';
 
 import { Button } from '@/components/atoms/Button';
 import { Input } from '@/components/atoms/Input';
@@ -231,41 +231,36 @@ export default function OnboardingPage() {
   const goBack = () => goToStep(activeStepIndex - 1);
 
   const handleCreateOrUpdateBrand = async (values: BrandDetailsFormValues) => {
-    // Save to localStorage
-    storage.saveBrandDetails(values);
-
-    const payload = {
-      name: values.name.trim(),
-      website: values.website?.trim() ?? null,
+    const profile: BrandProfile = {
+      industry: values.industry || null,
+      company_size: values.company_size || null,
+      geography: values.geography ? values.geography.split(',').map((entry) => entry.trim()).filter(Boolean) : [],
+      target_audience: values.target_audience || null,
+      brand_description: values.brand_description || null,
     };
 
-    let brandRecord = brandSnapshot;
     try {
+      let brandRecord = brandSnapshot;
+      
+      // If brand doesn't exist, create it first
       if (!brandRecord) {
+        const payload = {
+          name: values.name.trim(),
+          website: values.website?.trim() ?? null,
+        };
         const created = await createBrand(payload);
         brandRecord = created;
         setBrandId(created.id);
         setBrandSnapshot(created);
         toast.success('Brand created successfully.');
-      } else {
-        const updated = await updateBrand(brandRecord.id, payload);
-        brandRecord = updated;
-        setBrandSnapshot(updated);
-        toast.success('Brand updated successfully.');
       }
-
-      const profile: BrandProfile = {
-        industry: values.industry || null,
-        company_size: values.company_size || null,
-        geography: values.geography ? values.geography.split(',').map((entry) => entry.trim()).filter(Boolean) : [],
-        target_audience: values.target_audience || null,
-        brand_description: values.brand_description || null,
-      };
+      // If brand exists, only update the profile (name and website are locked)
 
       if (!brandRecord?.id) {
-        throw new Error('Missing brand identifier after create/update.');
+        throw new Error('Missing brand identifier.');
       }
 
+      // Always update the profile
       await upsertBrandProfile(brandRecord.id, profile);
       toast.success('Brand profile saved.');
 
@@ -321,10 +316,15 @@ export default function OnboardingPage() {
 
     try {
       await submitBrand(brandId);
-      toast.success('Brand submitted. We will start processing shortly.');
+      toast.success('Brand submitted successfully! Redirecting to dashboard...');
       // Clear storage after successful submission
       storage.clearStorage();
       queryClient.invalidateQueries({ queryKey: rqKeys.brandStatus(brandId) });
+      
+      // Redirect to dashboard after successful submission
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1000);
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : 'Unable to submit onboarding right now.');
@@ -448,12 +448,21 @@ export default function OnboardingPage() {
       formState: { errors, isSubmitting },
     } = brandForm;
 
+    const isBrandLocked = Boolean(brandSnapshot); // Lock name and website if brand exists
+
     return (
       <form className="space-y-6" onSubmit={handleSubmit(handleCreateOrUpdateBrand)} noValidate>
         <section className={cardClass}>
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-text">Brand basics</h3>
             <p className="text-sm text-text-secondary">Help us understand the essentials so recommendations reflect your brand.</p>
+
+            {isBrandLocked && (
+              <p className="flex items-center gap-2 text-sm text-primary/80">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                <span>Brand name and website cannot be changed after creation.</span>
+              </p>
+            )}
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <FormField
@@ -463,7 +472,12 @@ export default function OnboardingPage() {
               infoText="Your public brand name as it appears on social and your website."
               error={errors.name?.message}
             >
-              <Input id="brand-name" placeholder="Scan Social" {...register('name')} />
+              <Input 
+                id="brand-name" 
+                placeholder="Scan Social" 
+                {...register('name')} 
+                disabled={isBrandLocked}
+              />
             </FormField>
             <FormField
               variant="inside"
@@ -472,7 +486,12 @@ export default function OnboardingPage() {
               infoText="Use the full URL, including https://"
               error={errors.website?.message}
             >
-              <Input id="brand-website" placeholder="https://scansocial.site" {...register('website')} />
+              <Input 
+                id="brand-website" 
+                placeholder="https://example.com" 
+                {...register('website')} 
+                disabled={isBrandLocked}
+              />
             </FormField>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-2">
