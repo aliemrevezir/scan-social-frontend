@@ -28,16 +28,22 @@ export interface Brand {
 
 export interface BrandProfile {
   industry?: string | null;
-  company_size?: string | null; // "1-10" | "11-50" | ...
-  geography?: string[];         // ["US","CA","GB"]
-  preferred_platforms?: string[]; // ["instagram","twitter",...]
-  kpis?: string[];              // ["engagement","reach",...]
-  ad_language?: string[];       // ["en","es"]
+  company_size?: string | null;
+  product_service_type?: string | null;
   target_audience?: string | null;
-  brand_description?: string | null;
-  enrichment_flags?: Record<string, unknown>;
+  geography?: string[];
   budget_range?: string | null;
-  deleted_at?: string | null;
+  preferred_platforms?: string[];
+  campaign_goal?: string;
+  kpis?: string[];
+  voice_tone?: string | null;
+  brand_archetype?: string | null;
+  visual_identity?: string | null;
+  preferred_influencer_tier?: string | null;
+  ad_language?: string[];
+  ad_duration_pref?: string | null;
+  brand_description?: string | null;
+  enrichment_flags?: string | Record<string, unknown> | null;
 }
 
 export interface SocialHandle {
@@ -55,17 +61,17 @@ export interface Competitor {
 }
 
 export interface CampaignPreferences {
-  budget_range?: string;             // "10000-50000"
-  campaign_frequency?: string;       // "monthly" | ...
-  content_types?: string[];          // ["image","video","story"]
-  campaign_goals?: string[];         // ["brand_awareness","lead_generation","sales"]
+  budget_range?: string;
+  campaign_frequency?: string;
+  content_types?: string[];
+  campaign_goals?: string[];
   consents?: Record<string, boolean>;
   additional_preferences?: Record<string, unknown>;
 }
 
 export interface BrandVoice {
-  tone?: string;                 // e.g. "professional_friendly"
-  style?: string;                // e.g. "modern"
+  tone?: string;
+  style?: string;
   keywords?: string[];
   voice_guidelines?: string;
 }

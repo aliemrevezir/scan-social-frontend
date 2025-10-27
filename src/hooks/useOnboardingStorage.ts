@@ -8,9 +8,19 @@ export interface BrandDetailsFormValues {
   website?: string;
   industry?: string;
   company_size?: string;
+  product_service_type?: string;
   geography?: string;
   target_audience?: string;
   brand_description?: string;
+  preferred_platforms?: string;
+  kpis?: string;
+  voice_tone?: string;
+  brand_archetype?: string;
+  visual_identity?: string;
+  preferred_influencer_tier?: string;
+  ad_language?: string;
+  ad_duration_pref?: string;
+  campaign_goal?: string;
 }
 
 export interface PreferencesFormValues {
@@ -164,11 +174,28 @@ export function useOnboardingStorage() {
         profile: {
           industry: brandDetails?.industry || null,
           company_size: brandDetails?.company_size || null,
+          product_service_type: brandDetails?.product_service_type || null,
           geography: brandDetails?.geography
             ? brandDetails.geography.split(',').map((g: string) => g.trim()).filter(Boolean)
             : [],
           target_audience: brandDetails?.target_audience || null,
           brand_description: brandDetails?.brand_description || null,
+          preferred_platforms: brandDetails?.preferred_platforms
+            ? brandDetails.preferred_platforms.split(',').map((p: string) => p.trim()).filter(Boolean)
+            : [],
+          kpis: brandDetails?.kpis
+            ? brandDetails.kpis.split(',').map((k: string) => k.trim()).filter(Boolean)
+            : [],
+          voice_tone: brandDetails?.voice_tone || null,
+          brand_archetype: brandDetails?.brand_archetype || null,
+          visual_identity: brandDetails?.visual_identity || null,
+          preferred_influencer_tier: brandDetails?.preferred_influencer_tier || null,
+          ad_language: brandDetails?.ad_language
+            ? brandDetails.ad_language.split(',').map((l: string) => l.trim()).filter(Boolean)
+            : [],
+          ad_duration_pref: brandDetails?.ad_duration_pref || null,
+          campaign_goal: brandDetails?.campaign_goal || null,
+          budget_range: preferences?.budget_range || null,
         },
         campaignPreferences: {
           budget_range: preferences?.budget_range || null,
