@@ -89,6 +89,16 @@ const goalOptions = ['brand_awareness', 'lead_generation', 'sales', 'engagement'
 const budgetOptions = ['<10000', '10000-50000', '50000-150000', '150000+'] as const;
 const frequencyOptions = ['one-off', 'monthly', 'quarterly', 'always-on'] as const;
 
+const inputClass =
+  'h-12 rounded-2xl border border-border-light bg-white px-4 text-sm text-text placeholder:text-text-muted shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none';
+const textareaClass =
+  'min-h-[160px] rounded-3xl border border-border-light bg-white px-4 py-3 text-sm text-text placeholder:text-text-muted shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none';
+const cardClass = 'rounded-[28px] border border-border-light bg-white/95 p-6 shadow-soft md:p-8';
+const chipButtonClass =
+  'rounded-full border px-4 py-2 text-sm font-medium capitalize transition-colors';
+const optionButtonClass =
+  'rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-colors';
+
 export default function OnboardingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -352,37 +362,75 @@ export default function OnboardingPage() {
     } = brandForm;
 
     return (
-      <form className="space-y-8" onSubmit={handleSubmit(handleCreateOrUpdateBrand)} noValidate>
-        <div className="grid gap-6 md:grid-cols-2">
-          <FormField label="Brand name" htmlFor="brand-name" error={errors.name?.message}>
-            <Input id="brand-name" placeholder="Scan Social" {...register('name')} />
+      <form className="space-y-6" onSubmit={handleSubmit(handleCreateOrUpdateBrand)} noValidate>
+        <section className={cardClass}>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-text">Brand basics</h3>
+            <p className="text-sm text-text-secondary">Help us understand the essentials so recommendations reflect your brand.</p>
+          </div>
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <FormField label="Brand name" htmlFor="brand-name" error={errors.name?.message}>
+              <Input id="brand-name" placeholder="Scan Social" className={inputClass} {...register('name')} />
+            </FormField>
+            <FormField label="Website" htmlFor="brand-website" helperText="Include https://" error={errors.website?.message}>
+              <Input id="brand-website" placeholder="https://example.com" className={inputClass} {...register('website')} />
+            </FormField>
+          </div>
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <FormField
+              label="Industry"
+              htmlFor="brand-industry"
+              helperText="e.g. Beauty, Fintech, Consumer Electronics"
+              error={errors.industry?.message}
+            >
+              <Input id="brand-industry" placeholder="Industry" className={inputClass} {...register('industry')} />
+            </FormField>
+            <FormField label="Company size" htmlFor="brand-company" helperText="Approximate team size" error={errors.company_size?.message}>
+              <Input id="brand-company" placeholder="11-50" className={inputClass} {...register('company_size')} />
+            </FormField>
+          </div>
+        </section>
+
+        <section className={cardClass}>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-text">Audience & reach</h3>
+            <p className="text-sm text-text-secondary">Share where you operate and who you want to engage.</p>
+          </div>
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <FormField
+              label="Primary geography"
+              htmlFor="brand-geography"
+              helperText="Comma separated list (e.g. United States, Canada)"
+              error={errors.geography?.message}
+            >
+              <Input id="brand-geography" placeholder="United States, Canada" className={inputClass} {...register('geography')} />
+            </FormField>
+            <FormField label="Target audience" htmlFor="brand-audience" helperText="Who are you trying to reach?" error={errors.target_audience?.message}>
+              <Input
+                id="brand-audience"
+                placeholder="Gen Z skincare enthusiasts, 18-24"
+                className={inputClass}
+                {...register('target_audience')}
+              />
+            </FormField>
+          </div>
+        </section>
+
+        <section className={cardClass}>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-text">Brand voice & story</h3>
+            <p className="text-sm text-text-secondary">Optional, but helps us write briefs and sourcing notes that sound like you.</p>
+          </div>
+          <FormField label="Brand description" htmlFor="brand-description" error={errors.brand_description?.message} className="mt-6">
+            <textarea
+              id="brand-description"
+              {...register('brand_description')}
+              placeholder="Tell us about your brand voice, key differentiators, and brand story."
+              className={textareaClass}
+            />
           </FormField>
-          <FormField label="Website" htmlFor="brand-website" helperText="Include https://" error={errors.website?.message}>
-            <Input id="brand-website" placeholder="https://example.com" {...register('website')} />
-          </FormField>
-        </div>
-        <FormField label="Industry" htmlFor="brand-industry" helperText="e.g. Beauty, Fintech, Consumer Electronics" error={errors.industry?.message}>
-          <Input id="brand-industry" placeholder="Industry" {...register('industry')} />
-        </FormField>
-        <div className="grid gap-6 md:grid-cols-2">
-          <FormField label="Company size" htmlFor="brand-company" helperText="Approximate team size" error={errors.company_size?.message}>
-            <Input id="brand-company" placeholder="11-50" {...register('company_size')} />
-          </FormField>
-          <FormField label="Primary geography" htmlFor="brand-geography" helperText="Comma separated list" error={errors.geography?.message}>
-            <Input id="brand-geography" placeholder="United States, Canada" {...register('geography')} />
-          </FormField>
-        </div>
-        <FormField label="Target audience" htmlFor="brand-audience" error={errors.target_audience?.message}>
-          <Input id="brand-audience" placeholder="Gen Z skincare enthusiasts, 18-24" {...register('target_audience')} />
-        </FormField>
-        <FormField label="Brand description" htmlFor="brand-description" error={errors.brand_description?.message}>
-          <textarea
-            id="brand-description"
-            {...register('brand_description')}
-            placeholder="Tell us about your brand voice, key differentiators, and brand story."
-            className="input min-h-[140px] resize-vertical"
-          />
-        </FormField>
+        </section>
+
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Button variant="ghost" type="button" onClick={goBack} disabled={disableBack}>
             Back
@@ -411,6 +459,8 @@ export default function OnboardingPage() {
 
     const selectedContentTypes = watch('content_types');
     const selectedGoals = watch('campaign_goals');
+    const budgetValue = watch('budget_range');
+    const frequencyValue = watch('campaign_frequency');
 
     const toggleSelection = (field: 'content_types' | 'campaign_goals', value: string) => {
       const current = new Set(watch(field));
@@ -423,108 +473,151 @@ export default function OnboardingPage() {
     };
 
     return (
-      <form className="space-y-8" onSubmit={handleSubmit(handleSavePreferences)}>
-        <FormField label="Typical campaign budget" htmlFor="budget">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {budgetOptions.map((option) => (
-              <button
-                type="button"
-                key={option}
-                className={clsx(
-                  'rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-colors',
-                  watch('budget_range') === option
-                    ? 'border-primary bg-primary/10 text-primary shadow-soft'
-                    : 'border-border-light bg-white text-text-secondary hover:border-primary/40',
-                )}
-                onClick={() => setValue('budget_range', option, { shouldValidate: true })}
-              >
-                {option === '<10000' ? 'Under $10k' : option === '150000+' ? '$150k+' : `$${option.replace('-', ' - $')}`}
-              </button>
-            ))}
+      <form className="space-y-6" onSubmit={handleSubmit(handleSavePreferences)}>
+        <section className={cardClass}>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-text">Budget & cadence</h3>
+            <p className="text-sm text-text-secondary">These ranges help us suggest creators and campaign rhythms that match your resources.</p>
           </div>
-          {errors.budget_range ? <p className="error">{errors.budget_range.message}</p> : null}
-        </FormField>
+          <div className="mt-6 space-y-6">
+            <div>
+              <p className="mb-3 text-sm font-semibold text-text">Typical campaign budget</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {budgetOptions.map((option) => {
+                  const isSelected = budgetValue === option;
+                  const label =
+                    option === '<10000'
+                      ? 'Under $10k'
+                      : option === '150000+'
+                      ? '$150k+'
+                      : `$${option.replace('-', ' - $')}`;
+                  return (
+                    <button
+                      type="button"
+                      key={option}
+                      className={clsx(
+                        optionButtonClass,
+                        isSelected
+                          ? 'border-primary bg-primary/10 text-primary shadow-soft'
+                          : 'border-border-light bg-white text-text-secondary hover:border-primary/40',
+                      )}
+                      onClick={() => setValue('budget_range', option, { shouldValidate: true })}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.budget_range ? <p className="mt-3 text-sm font-medium text-error">{errors.budget_range.message}</p> : null}
+            </div>
 
-        <FormField label="Campaign frequency" htmlFor="frequency">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {frequencyOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className={clsx(
-                  'rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-colors capitalize',
-                  watch('campaign_frequency') === option
-                    ? 'border-primary bg-primary/10 text-primary shadow-soft'
-                    : 'border-border-light bg-white text-text-secondary hover:border-primary/40',
-                )}
-                onClick={() => setValue('campaign_frequency', option, { shouldValidate: true })}
-              >
-                {option.replace('-', ' ')}
-              </button>
-            ))}
+            <div>
+              <p className="mb-3 text-sm font-semibold text-text">Campaign frequency</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {frequencyOptions.map((option) => {
+                  const isSelected = frequencyValue === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={clsx(
+                        optionButtonClass,
+                        'capitalize',
+                        isSelected
+                          ? 'border-primary bg-primary/10 text-primary shadow-soft'
+                          : 'border-border-light bg-white text-text-secondary hover:border-primary/40',
+                      )}
+                      onClick={() => setValue('campaign_frequency', option, { shouldValidate: true })}
+                    >
+                      {option.replace('-', ' ')}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.campaign_frequency ? (
+                <p className="mt-3 text-sm font-medium text-error">{errors.campaign_frequency.message}</p>
+              ) : null}
+            </div>
           </div>
-          {errors.campaign_frequency ? <p className="error">{errors.campaign_frequency.message}</p> : null}
-        </FormField>
+        </section>
 
-        <div>
-          <p className="mb-3 text-sm font-semibold text-text">Preferred content types</p>
-          <div className="flex flex-wrap gap-3">
-            {contentTypeOptions.map((option) => {
-              const selected = selectedContentTypes.includes(option);
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  className={clsx(
-                    'rounded-full border px-4 py-2 text-sm font-medium capitalize transition-colors',
-                    selected ? 'border-primary bg-primary text-white shadow-soft' : 'border-border-light bg-white text-text-secondary',
-                  )}
-                  onClick={() => toggleSelection('content_types', option)}
-                >
-                  {option.replace('_', ' ')}
-                </button>
-              );
-            })}
+        <section className={cardClass}>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-text">Content & goals</h3>
+            <p className="text-sm text-text-secondary">Tell us what formats and outcomes matter most so we can fine-tune creator suggestions.</p>
           </div>
-          {errors.content_types ? <p className="error">{errors.content_types.message}</p> : null}
-        </div>
+          <div className="mt-6 space-y-6">
+            <div>
+              <p className="mb-3 text-sm font-semibold text-text">Preferred content types</p>
+              <div className="flex flex-wrap gap-3">
+                {contentTypeOptions.map((option) => {
+                  const selected = selectedContentTypes.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={clsx(
+                        chipButtonClass,
+                        selected ? 'border-primary bg-primary text-white shadow-soft' : 'border-border-light bg-white text-text-secondary',
+                      )}
+                      onClick={() => toggleSelection('content_types', option)}
+                    >
+                      {option.replace('_', ' ')}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.content_types ? <p className="mt-3 text-sm font-medium text-error">{errors.content_types.message}</p> : null}
+            </div>
 
-        <div>
-          <p className="mb-3 text-sm font-semibold text-text">Campaign goals</p>
-          <div className="flex flex-wrap gap-3">
-            {goalOptions.map((option) => {
-              const selected = selectedGoals.includes(option);
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  className={clsx(
-                    'rounded-full border px-4 py-2 text-sm font-medium capitalize transition-colors',
-                    selected ? 'border-primary bg-primary text-white shadow-soft' : 'border-border-light bg-white text-text-secondary',
-                  )}
-                  onClick={() => toggleSelection('campaign_goals', option)}
-                >
-                  {option.replace('_', ' ')}
-                </button>
-              );
-            })}
+            <div>
+              <p className="mb-3 text-sm font-semibold text-text">Campaign goals</p>
+              <div className="flex flex-wrap gap-3">
+                {goalOptions.map((option) => {
+                  const selected = selectedGoals.includes(option);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={clsx(
+                        chipButtonClass,
+                        selected ? 'border-primary bg-primary text-white shadow-soft' : 'border-border-light bg-white text-text-secondary',
+                      )}
+                      onClick={() => toggleSelection('campaign_goals', option)}
+                    >
+                      {option.replace('_', ' ')}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.campaign_goals ? <p className="mt-3 text-sm font-medium text-error">{errors.campaign_goals.message}</p> : null}
+            </div>
           </div>
-          {errors.campaign_goals ? <p className="error">{errors.campaign_goals.message}</p> : null}
-        </div>
+        </section>
 
-        <div className="space-y-3 rounded-2xl border border-border-light bg-white/80 p-4 text-sm">
-          <Checkbox
-            id="marketing-updates"
-            label="Keep me posted on new product features and campaign ideas."
-            {...register('consents.marketing_updates')}
-          />
-          <Checkbox
-            id="terms-ack"
-            label="I confirm that I have authority to share this information on behalf of my brand."
-            {...register('consents.terms_ack')}
-          />
-          {errors.consents?.terms_ack ? <p className="error">{errors.consents.terms_ack.message}</p> : null}
-        </div>
+        <section className={cardClass}>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-text">Consents & notifications</h3>
+            <p className="text-sm text-text-secondary">Tell us how you’d like to stay in the loop.</p>
+          </div>
+          <div className="mt-6 space-y-4 text-sm">
+            <Checkbox
+              id="marketing-updates"
+              label="Keep me posted on new product features and campaign ideas."
+              className="text-text-secondary"
+              {...register('consents.marketing_updates')}
+            />
+            <Checkbox
+              id="terms-ack"
+              label="I confirm that I have authority to share this information on behalf of my brand."
+              className="text-text-secondary"
+              {...register('consents.terms_ack')}
+            />
+            {errors.consents?.terms_ack ? (
+              <p className="text-sm font-medium text-error">{errors.consents.terms_ack.message}</p>
+            ) : null}
+          </div>
+        </section>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
           <Button variant="ghost" type="button" onClick={goBack}>
