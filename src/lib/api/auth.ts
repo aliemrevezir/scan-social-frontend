@@ -34,12 +34,172 @@ export interface User {
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken?: string | null;
   user: User;
 }
 
 export interface RegisterResponse {
   user: User;
 }
+
+const userTypeMap: Record<string, UserType> = {
+  BRAND: 'BRAND',
+  INFLUENCER: 'INFLUENCER',
+  CREATOR: 'INFLUENCER',
+};
+
+const getValueAtPath = (source: Record<string, unknown>, path: string): unknown => {
+  return path.split('.').reduce<unknown>((acc, key) => {
+    if (acc && typeof acc === 'object' && acc !== null) {
+      return (acc as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, source);
+};
+
+const pickString = (source: Record<string, unknown>, paths: string[]): string | undefined => {
+  for (const path of paths) {
+    const value = getValueAtPath(source, path);
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value;
+    }
+  }
+  return undefined;
+};
+
+const pickObject = (
+  source: Record<string, unknown>,
+  paths: string[],
+): Record<string, unknown> | undefined => {
+  for (const path of paths) {
+    const value = getValueAtPath(source, path);
+    if (value && typeof value === 'object') {
+      return value as Record<string, unknown>;
+    }
+  }
+  return undefined;
+};
+
+const normalizeUser = (raw: Record<string, unknown> | undefined): User => {
+  if (!raw) {
+    throw new Error('Authentication payload is missing user data.');
+  }
+
+  const idCandidate =
+    pickString(raw, ['id', 'uuid', 'user_id', 'pk', 'account_id']) ?? pickString(raw, ['user.id']);
+  const emailCandidate = pickString(raw, ['email', 'user.email', 'username', 'user.username']);
+
+  if (!idCandidate || !emailCandidate) {
+    throw new Error('Authentication payload is missing required user identifiers.');
+  }
+
+  const rawType = pickString(raw, ['type', 'role', 'user_type', 'account_type', 'kind', 'segment']);
+  const normalizedType = rawType ? rawType.toUpperCase() : undefined;
+  const type: UserType = normalizedType && userTypeMap[normalizedType] ? userTypeMap[normalizedType] : 'BRAND';
+
+  const displayName =
+    pickString(raw, ['displayName', 'display_name', 'name', 'full_name', 'user.displayName', 'user.name']) ?? null;
+
+  return {
+    id: idCandidate,
+    email: emailCandidate,
+    type,
+    displayName,
+  };
+};
+
+const normalizeAuthPayload = (payload: unknown): AuthResponse => {
+  const source = (payload ?? {}) as Record<string, unknown>;
+
+  const accessToken =
+    pickString(source, [
+      'accessToken',
+      'access_token',
+      'access',
+      'token',
+      'jwt',
+      'jwtToken',
+      'jwt_token',
+      'tokens.accessToken',
+      'tokens.access_token',
+      'tokens.access',
+      'token.accessToken',
+      'token.access_token',
+      'token.access',
+      'data.accessToken',
+      'data.access_token',
+      'data.access',
+      'data.token',
+      'data.jwt',
+      'data.tokens.accessToken',
+      'data.tokens.access_token',
+      'data.tokens.access',
+      'data.token.accessToken',
+      'data.token.access_token',
+      'data.token.access',
+      'data.data.token.access',
+      'data.data.tokens.access',
+    ]) ?? undefined;
+
+  if (!accessToken) {
+    throw new Error('Authentication payload is missing access token.');
+  }
+
+  const refreshToken =
+    pickString(source, [
+      'refreshToken',
+      'refresh_token',
+      'refresh',
+      'tokens.refreshToken',
+      'tokens.refresh_token',
+      'tokens.refresh',
+      'token.refreshToken',
+      'token.refresh_token',
+      'token.refresh',
+      'data.refreshToken',
+      'data.refresh_token',
+      'data.refresh',
+      'data.tokens.refreshToken',
+      'data.tokens.refresh_token',
+      'data.tokens.refresh',
+      'data.token.refreshToken',
+      'data.token.refresh_token',
+      'data.token.refresh',
+      'data.data.tokens.refresh',
+      'data.data.token.refresh',
+    ]) ?? null;
+
+  const userSource =
+    pickObject(source, ['user', 'account', 'profile']) ??
+    pickObject(source, ['data.user', 'data.account', 'data.profile']) ??
+    pickObject(source, ['data.data.user']);
+
+  const user = normalizeUser(userSource);
+
+  return {
+    accessToken,
+    refreshToken,
+    user,
+  };
+};
+
+const persistAuthArtifacts = (auth: AuthResponse) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  storeAccessToken(auth.accessToken);
+  localStorage.setItem('user', JSON.stringify(auth.user));
+  localStorage.setItem('userRole', auth.user.type);
+
+  if (auth.refreshToken) {
+    Cookies.set('refreshToken', auth.refreshToken, {
+      sameSite: 'lax',
+      path: '/',
+      expires: 30,
+    });
+  }
+};
 
 // Create axios instance with default config
 const apiClient = createApiClient();
@@ -85,14 +245,10 @@ apiClient.interceptors.response.use(
 
       try {
         // Try to refresh the token
-        const response = await refresh();
-        const { accessToken } = response.data;
-
-        // Store the new access token using our utility function
-        storeAccessToken(accessToken);
+        const auth = await refresh();
 
         // Retry the original request
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${auth.accessToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         // If refresh fails, redirect to login
@@ -127,35 +283,15 @@ export const register = async (data: RegisterInput): Promise<AxiosResponse<Regis
   return response;
 };
 
-export const login = async (data: LoginInput): Promise<AxiosResponse<AuthResponse>> => {
-  const response = await apiClient.post('/auth/login', data);
-  
-  // Store user data in localStorage
-  if (response.data.accessToken) {
-    storeAccessToken(response.data.accessToken);
-  }
-  
-  if (response.data.user) {
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  }
-  
-  return response;
+export const login = (data: LoginInput): Promise<AxiosResponse<unknown>> => {
+  return apiClient.post('/auth/login', data);
 };
 
-export const refresh = async (): Promise<AxiosResponse<AuthResponse>> => {
+export const refresh = async (): Promise<AuthResponse> => {
   const response = await apiClient.post('/auth/refresh');
-  
-  // Store the new access token
-  if (response.data.accessToken) {
-    storeAccessToken(response.data.accessToken);
-  }
-  
-  // Store user data in localStorage
-  if (response.data.user) {
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  }
-  
-  return response;
+  const auth = normalizeAuthPayload(response.data);
+  persistAuthArtifacts(auth);
+  return auth;
 };
 
 export const logout = async (): Promise<AxiosResponse<{ ok: boolean }>> => {
@@ -168,7 +304,9 @@ export const logout = async (): Promise<AxiosResponse<{ ok: boolean }>> => {
     Cookies.remove('refreshToken'); // If using cookies for refresh token
     
     // Also remove accessToken cookie
-    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    if (typeof document !== 'undefined') {
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
     
     return response;
   } catch (error) {
@@ -178,7 +316,9 @@ export const logout = async (): Promise<AxiosResponse<{ ok: boolean }>> => {
     Cookies.remove('refreshToken');
     
     // Also remove accessToken cookie
-    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    if (typeof document !== 'undefined') {
+      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
     
     throw error;
   }
@@ -197,9 +337,11 @@ export const getMe = async (): Promise<AxiosResponse<{ user: User }>> => {
 
 // Utility functions
 export const storeAccessToken = (token: string) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('accessToken', token);
+  if (typeof window === 'undefined') {
+    return;
   }
+
+  localStorage.setItem('accessToken', token);
 
   Cookies.set('accessToken', token, {
     sameSite: 'lax',
@@ -274,7 +416,9 @@ export const getCurrentUser = (): User | null => {
       // Token expired
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
-      document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      if (typeof document !== 'undefined') {
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
       return null;
     }
     
@@ -291,24 +435,16 @@ export const getCurrentUser = (): User | null => {
 
 export const loginBrand = async (credentials: LoginInput): Promise<AuthResponse> => {
   const response = await login(credentials);
-  
-  // Store user data in localStorage
-  if (response.data.user) {
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  }
-  
-  return response.data;
+  const auth = normalizeAuthPayload(response.data);
+  persistAuthArtifacts(auth);
+  return auth;
 };
 
 export const loginInfluencer = async (credentials: LoginInput): Promise<AuthResponse> => {
   const response = await login(credentials);
-  
-  // Store user data in localStorage
-  if (response.data.user) {
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-  }
-  
-  return response.data;
+  const auth = normalizeAuthPayload(response.data);
+  persistAuthArtifacts(auth);
+  return auth;
 };
 
 export const devDefaults = () => ({
