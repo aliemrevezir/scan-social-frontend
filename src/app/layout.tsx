@@ -7,6 +7,7 @@ import "@/styles/distribution.css";
 
 import { ToasterClient } from '@/components/atoms/ToasterClient';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import { OnboardingGate } from '@/components/onboarding/OnboardingGate';
 import { AuthProvider } from '@/lib/auth-context';
 
 const manrope = Manrope({
@@ -67,6 +68,7 @@ export default function RootLayout({
       <body className={`${manrope.variable} antialiased`} suppressHydrationWarning>
         <QueryProvider>
           <AuthProvider>
+            <OnboardingGate />
             {children}
           </AuthProvider>
         </QueryProvider>

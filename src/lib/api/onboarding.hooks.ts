@@ -156,16 +156,29 @@ export function useSubmitBrand(brandId: UUID) {
   });
 }
 
-export function useShouldShowOnboardingModal(brandId?: UUID | null) {
-  const statusQuery = useBrandStatus(brandId, true);
-  const showModal =
+interface ShouldShowModalOptions {
+  includeWhenNoBrand?: boolean;
+  enabled?: boolean;
+  refetchInterval?: number;
+}
+
+export function useShouldShowOnboardingModal(brandId?: UUID | null, options?: ShouldShowModalOptions) {
+  const includeWhenNoBrand = options?.includeWhenNoBrand ?? false;
+  const enabled = options?.enabled ?? true;
+  const refetchInterval = options?.refetchInterval ?? 4000;
+
+  const statusQuery = useBrandStatus(brandId, Boolean(brandId) && enabled, refetchInterval);
+
+  const showForMissingBrand = includeWhenNoBrand && enabled && !brandId;
+  const showForExistingBrand =
     Boolean(brandId) &&
+    enabled &&
     !statusQuery.isLoading &&
     !statusQuery.isFetching &&
     !isBrandOnboarded(statusQuery.data ?? null);
 
   return {
-    showModal,
+    showModal: showForMissingBrand || showForExistingBrand,
     statusQuery,
   };
 }

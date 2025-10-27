@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { fetchDashboard, type DashboardPayload } from '@/lib/api/dashboard';
 import { KpiStat } from '@/components/dashboard/KpiStat';
 import PerformanceCard from '@/components/dashboard/PerformanceCard';
@@ -12,20 +11,18 @@ import { DashboardSkeleton } from '@/components/dashboard/SkeletonLoader';
 import { ErrorBoundary, RetryWrapper } from '@/components/dashboard/ErrorBoundary';
 import { formatNumber } from '@/lib/utils';
 import { Button } from '@/components/atoms/Button';
-import { useBrands, useShouldShowOnboardingModal } from '@/lib/api/onboarding.hooks';
-import { OnboardingStatusModal } from '@/components/molecules/OnboardingStatusModal';
+import { useBrands, useBrandStatus } from '@/lib/api/onboarding.hooks';
 import { isBrandOnboarded } from '@/lib/api/onboarding';
 
 function DashboardContent() {
-  const router = useRouter();
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isBrandUser = data?.role === 'BRAND';
   const { data: brandList } = useBrands(isBrandUser);
   const primaryBrandId = isBrandUser ? brandList?.[0]?.id ?? null : null;
-  const { showModal, statusQuery } = useShouldShowOnboardingModal(primaryBrandId);
-  const brandReady = !isBrandUser || isBrandOnboarded(statusQuery.data ?? null);
+  const statusQuery = useBrandStatus(primaryBrandId, Boolean(primaryBrandId));
+  const brandReady = !isBrandUser ? true : Boolean(primaryBrandId) && isBrandOnboarded(statusQuery.data ?? null);
 
   const loadDashboard = async () => {
     try {
@@ -94,15 +91,6 @@ function DashboardContent() {
 
   return (
     <main className="main-with-header container mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      {isBrandUser && primaryBrandId ? (
-        <OnboardingStatusModal
-          open={showModal}
-          status={statusQuery.data}
-          onContinue={() => {
-            router.push('/onboarding');
-          }}
-        />
-      ) : null}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-semibold text-text">Dashboard</h1>
         {isBrand && !isEmpty && brandReady && (
